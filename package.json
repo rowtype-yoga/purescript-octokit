@@ -1,0 +1,25 @@
+{
+  "name": "purescript-octokit",
+  "version": "1.0.0",
+  "description": "purescript wrapper for octokit",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sigma-andex/purescript-octokit.git"
+  },
+  "author": "",
+  "license": "MIT-0",
+  "bugs": {
+    "url": "https://github.com/sigma-andex/purescript-octokit/issues"
+  },
+  "homepage": "https://github.com/sigma-andex/purescript-octokit#readme",
+  "devDependencies": {
+    "spago": "^0.20.3"
+  },
+  "dependencies": {
+    "octokit": "^1.7.1"
+  }
+}

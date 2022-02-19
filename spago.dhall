@@ -3,6 +3,7 @@
   [ "aff"
   , "aff-promise"
   , "argonaut"
+  , "bifunctors"
   , "console"
   , "effect"
   , "either"

@@ -1,5 +1,6 @@
 const { Octokit, App } = require("octokit")
 const { throttling } = require("@octokit/plugin-throttling")
+const { request } = require("@octokit/request")
 const ThrottledOctokit = Octokit.plugin(throttling)
 
 exports.octokit = (auth) => () => new ThrottledOctokit({
@@ -22,6 +23,7 @@ exports.octokit = (auth) => () => new ThrottledOctokit({
                 `Abuse detected for request ${options.method} ${options.url}`
             )
         },
-    },
+    }
 })
+
 exports.requestImpl = (client, route, params) => () => client.request(route, params)

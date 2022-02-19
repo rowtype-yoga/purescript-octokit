@@ -1,27 +1,34 @@
 module Octokit.Octokit
-  ( CommitActivity
+  ( Blob
+  , Commit
+  , CommitActivity
+  , FlatTree
   , License
   , Octokit
+  , Repo
   , RequestParams
   , Response
   , Route(..)
   , SearchResult
-  , Repo
+  , TreeItem
   , octokit
   , request
-  ) where
+  )
+  where
 
 import Prelude
 
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Argonaut (class DecodeJson, Json, decodeJson, printJsonDecodeError)
-import Data.Either (either)
+import Data.Argonaut as Argonaut
+import Data.Bifunctor (bimap)
+import Data.Either (Either, either)
 import Data.Function.Uncurried (Fn3, runFn3)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Effect (Effect)
-import Effect.Aff (Aff, error, throwError)
+import Effect.Aff (Aff, Error, attempt, error, throwError)
 
 foreign import data Octokit :: Type
 
@@ -45,13 +52,16 @@ type Response d =
 
 foreign import requestImpl :: forall params. Fn3 Octokit String params (Effect (Promise (Response Json)))
 
-request :: forall params output. DecodeJson output => Octokit -> Route -> params -> Aff (Response output)
-request client (Route route) params = runFn3 requestImpl client route params # Promise.toAffE >>= tryParse
+request :: forall params output. DecodeJson output => Octokit -> Route -> params -> Aff (Either Error (Response output))
+request client (Route route) params = runFn3 requestImpl client route params # Promise.toAffE # attempt <#> \either -> either >>= tryParse
   where
-  tryParse { status, "data": d } = do
+  tryParse { status, "data": d } =
     let
+      decoded :: Either Argonaut.JsonDecodeError output
       decoded = decodeJson d
-    either (printJsonDecodeError >>> error >>> throwError) (\decodedData -> pure { status, "data": decodedData }) decoded
+
+      result =  bimap (printJsonDecodeError >>> error) (\decodedData -> { status, "data": decodedData }) decoded
+    in result 
 
 type CommitActivity = Array
   { days :: Array Int
@@ -143,11 +153,15 @@ type Repo =
       , type :: Maybe String
       , url :: Maybe String
       }
+  , parent ::
+      Maybe
+        { language :: String
+        }
   , private :: Maybe Boolean
   , pulls_url :: Maybe String
   , pushed_at :: Maybe String
   , releases_url :: Maybe String
-  , score :: Number
+  , score :: Maybe Number
   , size :: Maybe Int
   , ssh_url :: Maybe String
   , stargazers_count :: Maybe Int
@@ -167,9 +181,113 @@ type Repo =
   , watchers_count :: Maybe Int
   }
 
-type SearchResult =
+type TreeItem =
+  { mode :: String
+  , path :: String
+  , sha :: String
+  , size :: Maybe Int
+  , type :: String
+  , url :: String
+  }
+
+type FlatTree =
+  { sha :: String
+  , tree ::
+      Array TreeItem
+  , url :: String
+  }
+
+type Blob =
+  { content :: Maybe String
+  , encoding :: Maybe String
+  , node_id :: Maybe String
+  , sha :: Maybe String
+  , size :: Maybe Int
+  , url :: Maybe String
+  }
+
+type Commit =
+  { author ::
+      { avatar_url :: String
+      , events_url :: String
+      , followers_url :: String
+      , following_url :: String
+      , gists_url :: String
+      , gravatar_id :: String
+      , html_url :: String
+      , id :: Int
+      , login :: String
+      , node_id :: String
+      , organizations_url :: String
+      , received_events_url :: String
+      , repos_url :: String
+      , site_admin :: Boolean
+      , starred_url :: String
+      , subscriptions_url :: String
+      , type :: String
+      , url :: String
+      }
+  , comments_url :: String
+  , commit ::
+      { author ::
+          { date :: String
+          , email :: String
+          , name :: String
+          }
+      , comment_count :: Int
+      , committer ::
+          { date :: String
+          , email :: String
+          , name :: String
+          }
+      , message :: String
+      , tree ::
+          { sha :: String
+          , url :: String
+          }
+      , url :: String
+      , verification ::
+          { payload :: Maybe String
+          , reason :: String
+          , signature :: Maybe String
+          , verified :: Boolean
+          }
+      }
+  , committer ::
+      { avatar_url :: String
+      , events_url :: String
+      , followers_url :: String
+      , following_url :: String
+      , gists_url :: String
+      , gravatar_id :: String
+      , html_url :: String
+      , id :: Int
+      , login :: String
+      , node_id :: String
+      , organizations_url :: String
+      , received_events_url :: String
+      , repos_url :: String
+      , site_admin :: Boolean
+      , starred_url :: String
+      , subscriptions_url :: String
+      , type :: String
+      , url :: String
+      }
+  , html_url :: String
+  , node_id :: String
+  , parents ::
+      Array
+        { html_url :: String
+        , sha :: String
+        , url :: String
+        }
+  , sha :: String
+  , url :: String
+  }
+
+type SearchResult d =
   { incomplete_results :: Boolean
   , items ::
-      Array Repo
+      Array d
   , total_count :: Int
   }

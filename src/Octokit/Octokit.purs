@@ -11,10 +11,10 @@ module Octokit.Octokit
   , Route(..)
   , SearchResult
   , TreeItem
+  , User
   , octokit
   , request
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -23,12 +23,12 @@ import Control.Promise as Promise
 import Data.Argonaut (class DecodeJson, Json, decodeJson, printJsonDecodeError)
 import Data.Argonaut as Argonaut
 import Data.Bifunctor (bimap)
-import Data.Either (Either, either)
+import Data.Either (Either)
 import Data.Function.Uncurried (Fn3, runFn3)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
 import Effect (Effect)
-import Effect.Aff (Aff, Error, attempt, error, throwError)
+import Effect.Aff (Aff, Error, attempt, error)
 
 foreign import data Octokit :: Type
 
@@ -60,8 +60,9 @@ request client (Route route) params = runFn3 requestImpl client route params # P
       decoded :: Either Argonaut.JsonDecodeError output
       decoded = decodeJson d
 
-      result =  bimap (printJsonDecodeError >>> error) (\decodedData -> { status, "data": decodedData }) decoded
-    in result 
+      result = bimap (printJsonDecodeError >>> error) (\decodedData -> { status, "data": decodedData }) decoded
+    in
+      result
 
 type CommitActivity = Array
   { days :: Array Int
@@ -70,11 +71,11 @@ type CommitActivity = Array
   }
 
 type License =
-  { key :: Maybe String
-  , name :: Maybe String
+  { key :: String
+  , name :: String
   , node_id :: Maybe String
   , spdx_id :: Maybe String
-  , url :: Maybe String
+  , html_url :: Maybe String
   }
 
 type Repo =
@@ -102,7 +103,7 @@ type Repo =
   , forks :: Maybe Int
   , forks_count :: Maybe Int
   , forks_url :: Maybe String
-  , full_name :: Maybe String
+  , full_name :: String
   , git_commits_url :: Maybe String
   , git_refs_url :: Maybe String
   , git_tags_url :: Maybe String
@@ -115,7 +116,7 @@ type Repo =
   , homepage :: Maybe String
   , hooks_url :: Maybe String
   , html_url :: Maybe String
-  , id :: Maybe Int
+  , id :: Int
   , is_template :: Maybe Boolean
   , issue_comment_url :: Maybe String
   , issue_events_url :: Maybe String
@@ -128,7 +129,7 @@ type Repo =
   , merges_url :: Maybe String
   , milestones_url :: Maybe String
   , mirror_url :: Maybe String
-  , name :: Maybe String
+  , name :: String
   , node_id :: Maybe String
   , notifications_url :: Maybe String
   , open_issues :: Maybe Int
@@ -141,8 +142,8 @@ type Repo =
       , gists_url :: Maybe String
       , gravatar_id :: Maybe String
       , html_url :: Maybe String
-      , id :: Maybe Int
-      , login :: Maybe String
+      , id :: Int
+      , login :: String
       , node_id :: Maybe String
       , organizations_url :: Maybe String
       , received_events_url :: Maybe String
@@ -157,7 +158,15 @@ type Repo =
       Maybe
         { language :: String
         }
-  , private :: Maybe Boolean
+  , permissions ::
+      Maybe
+        { admin :: Boolean
+        , maintain :: Boolean
+        , pull :: Boolean
+        , push :: Boolean
+        , triage :: Boolean
+        }
+  , private :: Boolean
   , pulls_url :: Maybe String
   , pushed_at :: Maybe String
   , releases_url :: Maybe String
@@ -283,6 +292,41 @@ type Commit =
         }
   , sha :: String
   , url :: String
+  }
+
+type User =
+  { avatar_url :: Maybe String
+  , bio :: Maybe String
+  , blog :: Maybe String
+  , company :: Maybe String
+  , created_at :: Maybe String
+  , email :: Maybe String
+  , events_url :: Maybe String
+  , followers :: Maybe Int
+  , followers_url :: Maybe String
+  , following :: Maybe Int
+  , following_url :: Maybe String
+  , gists_url :: Maybe String
+  , gravatar_id :: Maybe String
+  , hireable :: Maybe String
+  , html_url :: Maybe String
+  , id :: Int
+  , location :: Maybe String
+  , login :: String
+  , name :: Maybe String
+  , node_id :: Maybe String
+  , organizations_url :: Maybe String
+  , public_gists :: Maybe Int
+  , public_repos :: Maybe Int
+  , received_events_url :: Maybe String
+  , repos_url :: Maybe String
+  , site_admin :: Maybe Boolean
+  , starred_url :: Maybe String
+  , subscriptions_url :: Maybe String
+  , twitter_username :: Maybe String
+  , type :: Maybe String
+  , updated_at :: Maybe String
+  , url :: Maybe String
   }
 
 type SearchResult d =
